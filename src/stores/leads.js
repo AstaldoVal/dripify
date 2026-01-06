@@ -354,6 +354,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Portland',
       lastAction: daysAgo(2),
+      createdAt: daysAgo(2),
       linkedinUrl: 'https://linkedin.com/in/bryan-bayless',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -378,6 +379,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Houston',
       lastAction: daysAgo(7),
+      createdAt: daysAgo(7),
       linkedinUrl: 'https://linkedin.com/in/david-pierce',
       campaignName: 'Product Launch',
       campaignId: 2,
@@ -404,6 +406,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'United States',
       lastAction: daysAgo(10),
+      createdAt: daysAgo(10),
       linkedinUrl: 'https://linkedin.com/in/hannah-turner',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -430,6 +433,7 @@ const getExampleLeads = () => {
       emailStatus: 'find',
       location: 'San Francisco',
       lastAction: daysAgo(13),
+      createdAt: daysAgo(13),
       linkedinUrl: 'https://linkedin.com/in/will-anastas',
       campaignName: 'Follow-up Sequence',
       campaignId: 3,
@@ -458,6 +462,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'United States',
       lastAction: daysAgo(13),
+      createdAt: daysAgo(13),
       linkedinUrl: 'https://linkedin.com/in/joe-kvidera',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -485,6 +490,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'United States',
       lastAction: daysAgo(14),
+      createdAt: daysAgo(14),
       linkedinUrl: 'https://linkedin.com/in/jerry-recht',
       campaignName: 'Product Launch',
       campaignId: 2,
@@ -514,6 +520,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Canada',
       lastAction: daysAgo(16),
+      createdAt: daysAgo(16),
       linkedinUrl: 'https://linkedin.com/in/sanjay-malhotra',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -542,6 +549,7 @@ const getExampleLeads = () => {
       emailStatus: 'not_found',
       location: 'Windsor',
       lastAction: daysAgo(16),
+      createdAt: daysAgo(16),
       linkedinUrl: 'https://linkedin.com/in/robert-novena',
       campaignName: 'Follow-up Sequence',
       campaignId: 3,
@@ -571,6 +579,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Slinger',
       lastAction: daysAgo(14),
+      createdAt: daysAgo(14),
       linkedinUrl: 'https://linkedin.com/in/bryan-held',
       campaignName: 'Product Launch',
       campaignId: 2,
@@ -599,6 +608,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Baton Rouge Metropolitan Area',
       lastAction: daysAgo(14),
+      createdAt: daysAgo(14),
       linkedinUrl: 'https://linkedin.com/in/gregory-watford',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -629,6 +639,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'New York',
       lastAction: daysAgo(30),
+      createdAt: daysAgo(30),
       linkedinUrl: 'https://linkedin.com/in/sarah-johnson',
       campaignName: 'Q4 Outreach',
       campaignId: 1,
@@ -655,6 +666,7 @@ const getExampleLeads = () => {
       emailStatus: 'found',
       location: 'Los Angeles',
       lastAction: daysAgo(25),
+      createdAt: daysAgo(25),
       linkedinUrl: 'https://linkedin.com/in/michael-chen',
       campaignName: 'Product Launch',
       campaignId: 2,
@@ -793,6 +805,7 @@ const generateMockLeads = (count = 100) => {
       emailStatus,
       location: locations[i % locations.length],
       lastAction: lastActionDate.toISOString(),
+      createdAt: lastActionDate.toISOString(), // Add createdAt for date filtering
       linkedinUrl: `https://linkedin.com/in/${name.toLowerCase().replace(/\s+/g, '-')}`,
       campaignName: ['Q4 Outreach', 'Product Launch', 'Follow-up Sequence'][i % 3],
       campaignId: (i % 3) + 1,
@@ -854,25 +867,24 @@ const applyInlineFilter = (leads, expression) => {
 
   // Apply filters with logical connectors
   return leads.filter(lead => {
-    let result = null;
+    if (conditions.length === 0) return true;
+    
+    let result = evaluateCondition(lead, conditions[0]);
 
-    for (let i = 0; i < conditions.length; i++) {
+    // Apply connectors between conditions
+    // connectors[i] is between conditions[i] and conditions[i+1]
+    for (let i = 1; i < conditions.length; i++) {
       const conditionResult = evaluateCondition(lead, conditions[i]);
-
-      if (result === null) {
-        result = conditionResult;
+      const connector = connectors[i - 1] || 'AND';
+      
+      if (connector === 'AND') {
+        result = result && conditionResult;
       } else {
-        // Get connector between current and previous condition
-        const connector = connectors[i - 1] || 'AND';
-        if (connector === 'AND') {
-          result = result && conditionResult;
-        } else {
-          result = result || conditionResult;
-        }
+        result = result || conditionResult;
       }
     }
 
-    return result === null ? true : result;
+    return result;
   });
 };
 
@@ -913,30 +925,39 @@ const evaluateEmailCondition = (lead, operator, value) => {
   const emails = lead.emails || [];
   const hasEmail = emails.length > 0;
   const emailStr = emails.join(' ').toLowerCase();
-  const valueStr = (value || '').trim().toLowerCase();
+  const valueStr = (value || '').toString().trim().toLowerCase();
 
   if (!valueStr && operator !== 'is_set' && operator !== 'is_blank') {
     return false; // Empty value for operators that need value
   }
 
+  let result = false;
   switch (operator) {
     case 'eq':
       // Exact match - check if any email exactly matches (case-insensitive)
-      return emails.some(e => e.toLowerCase().trim() === valueStr);
+      result = emails.some(e => e.toLowerCase().trim() === valueStr);
+      break;
     case 'ne':
       // Not equal - check if no email exactly matches
-      return !emails.some(e => e.toLowerCase().trim() === valueStr);
+      result = !emails.some(e => e.toLowerCase().trim() === valueStr);
+      break;
     case 'contains':
-      return emailStr.includes(valueStr);
+      result = emailStr.includes(valueStr);
+      break;
     case 'not_contains':
-      return !emailStr.includes(valueStr);
+      result = !emailStr.includes(valueStr);
+      break;
     case 'is_set':
-      return hasEmail;
+      result = hasEmail;
+      break;
     case 'is_blank':
-      return !hasEmail;
+      result = !hasEmail;
+      break;
     default:
-      return true;
+      result = true;
   }
+  
+  return result;
 };
 
 const evaluateCompanyCondition = (lead, operator, value) => {
@@ -986,8 +1007,21 @@ const evaluateLocationCondition = (lead, operator, value) => {
 };
 
 const evaluateDateCondition = (lead, operator, value) => {
-  const createDate = lead.createdAt ? new Date(lead.createdAt) : null;
-  const isSet = !!createDate;
+  // Use lastAction as the creation/action date for filtering
+  // If lastAction is not available, we can't filter by date
+  const dateValue = lead.lastAction || lead.createdAt || null;
+  const createDate = dateValue ? new Date(dateValue) : null;
+  const isSet = !!createDate && !isNaN(createDate.getTime());
+
+  if (!isSet && operator !== 'is_blank') {
+    // If date is not set and operator requires a date, return false
+    if (operator === 'is_set') {
+      return false;
+    }
+    if (operator === 'before' || operator === 'after') {
+      return false;
+    }
+  }
 
   switch (operator) {
     case 'is_set':
@@ -996,12 +1030,46 @@ const evaluateDateCondition = (lead, operator, value) => {
       return !isSet;
     case 'before':
       if (!isSet || !value) return false;
-      const beforeDate = new Date(value);
-      return createDate < beforeDate;
+      // Parse the value - it should be in YYYY-MM-DD format from date input
+      let beforeDate;
+      if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // YYYY-MM-DD format - add time to make it start of day
+        beforeDate = new Date(value + 'T00:00:00');
+      } else {
+        beforeDate = new Date(value);
+      }
+      
+      if (isNaN(beforeDate.getTime())) {
+        console.warn('Invalid date value for before operator:', value);
+        return false;
+      }
+      // Set time to start of day for "before" comparison (before means strictly before the date)
+      beforeDate.setHours(0, 0, 0, 0);
+      // Compare only dates, ignoring time
+      const leadDateOnlyBefore = new Date(createDate);
+      leadDateOnlyBefore.setHours(0, 0, 0, 0);
+      return leadDateOnlyBefore < beforeDate;
     case 'after':
       if (!isSet || !value) return false;
-      const afterDate = new Date(value);
-      return createDate > afterDate;
+      // Parse the value - it should be in YYYY-MM-DD format from date input
+      let afterDate;
+      if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // YYYY-MM-DD format - add time to make it end of day
+        afterDate = new Date(value + 'T23:59:59.999');
+      } else {
+        afterDate = new Date(value);
+      }
+      
+      if (isNaN(afterDate.getTime())) {
+        console.warn('Invalid date value for after operator:', value);
+        return false;
+      }
+      // Set time to start of day for "after" comparison (after means on or after the date)
+      afterDate.setHours(0, 0, 0, 0);
+      // Compare only dates, ignoring time
+      const leadDateOnlyAfter = new Date(createDate);
+      leadDateOnlyAfter.setHours(0, 0, 0, 0);
+      return leadDateOnlyAfter >= afterDate;
     default:
       return true;
   }

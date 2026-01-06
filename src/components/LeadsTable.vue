@@ -29,7 +29,6 @@
             selected: isSelected(lead.id),
             [`stage-${lead.leadStage?.toLowerCase().replace('_', '-')}`]: lead.leadStage
           }"
-          @click="handleRowClick(lead)"
         >
           <td class="col-checkbox" @click.stop>
             <input
@@ -133,7 +132,7 @@ export default {
       immediate: true,
     },
   },
-  emits: ['select', 'select-all', 'row-click', 'action', 'stage-click'],
+  emits: ['select', 'select-all', 'action', 'stage-click'],
   setup(props, { emit }) {
     const visibleLeads = computed(() => {
       if (!Array.isArray(props.leads)) return [];
@@ -160,10 +159,6 @@ export default {
     
     const handleSelectAllChange = (event) => {
       emit('select-all', event.target.checked);
-    };
-    
-    const handleRowClick = (lead) => {
-      emit('row-click', lead);
     };
     
     const handleActionMenu = (lead) => {
@@ -202,7 +197,6 @@ export default {
       isSelected,
       handleSelectChange,
       handleSelectAllChange,
-      handleRowClick,
       handleActionMenu,
       handleStageClick,
       getInitials,

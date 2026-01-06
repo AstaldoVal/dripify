@@ -347,12 +347,16 @@ export default {
       closeDropdowns();
     };
 
-    const handleDateChange = () => {
-      const newCondition = {
-        ...props.condition,
-        value: localValue.value,
-      };
-      emit('update', newCondition);
+    const handleDateChange = (event) => {
+      const dateValue = event?.target?.value || localValue.value;
+      if (dateValue) {
+        const newCondition = {
+          ...props.condition,
+          value: dateValue,
+        };
+        emit('update', newCondition);
+        closeDropdowns();
+      }
     };
 
     const finishEditing = () => {

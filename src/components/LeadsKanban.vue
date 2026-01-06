@@ -32,7 +32,6 @@
           :draggable="true"
           @dragstart="handleDragStart($event, lead)"
           @dragend="handleDragEnd"
-          @click="handleCardClick(lead)"
         >
           <div class="card-header">
             <div class="card-avatar">
@@ -101,7 +100,7 @@ export default {
       default: () => [],
     },
   },
-  emits: ['card-click', 'card-menu', 'stage-change'],
+  emits: ['card-menu', 'stage-change'],
   setup(props, { emit }) {
     const draggedLeadId = ref(null);
     const draggedFromStage = ref(null);
@@ -140,10 +139,6 @@ export default {
       if (!date) return '—';
       const d = new Date(date);
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    };
-
-    const handleCardClick = (lead) => {
-      emit('card-click', lead);
     };
 
     const handleCardMenu = (lead) => {
@@ -223,7 +218,6 @@ export default {
       getInitials,
       truncate,
       formatDate,
-      handleCardClick,
       handleCardMenu,
       handleDragStart,
       handleDragEnd,
